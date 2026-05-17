@@ -11,6 +11,12 @@ if ! command -v yay &>/dev/null; then
   (cd /tmp/yay && makepkg -si --noconfirm)
 fi
 
+echo "==> Enabling multilib repository"
+if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+  sudo sed -i "/^#\[multilib\]/,/^#Include = \/etc\/pacman.d\/mirrorlist/ s/^#//" /etc/pacman.conf
+  sudo pacman -Sy
+fi
+
 echo "==> Installing pacman packages"
 sudo pacman -S --needed --noconfirm - < "$REPO_DIR/packages/pacman.txt"
 
