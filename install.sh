@@ -45,6 +45,12 @@ chezmoi init --apply --source="$REPO_DIR"
 echo "==> Applying papirus folder color"
 papirus-folders -C palebrown --theme Papirus-Light
 
+echo "==> Installing konsave via pipx"
+if ! pipx list --short 2>/dev/null | grep -q '^konsave '; then
+  pipx install konsave
+fi
+export PATH="$HOME/.local/bin:$PATH"
+
 echo "==> Importing Konsave profile"
 konsave -i "$REPO_DIR/konsave/rose-pine-dawn.knsv"
 konsave -a rose-pine-dawn
