@@ -11,17 +11,18 @@ Personal dotfiles for bootstrapping a fresh Arch Linux + KDE Plasma 6 install on
 ## Repo layout
 
 ```
-install.sh              # One-shot bootstrap: yay → pacman → AUR → chezmoi → konsave
+install.sh              # One-shot bootstrap: yay → pacman → AUR → services → chezmoi → konsave
 packages/
   pacman.txt            # Official-repo packages, one per line
   aur.txt               # AUR packages, one per line
 dot_bashrc              # chezmoi source for ~/.bashrc
 dot_config/             # chezmoi source for ~/.config/...
-dot_local/              # chezmoi source for ~/.local/...
 konsave/
-  rose-pine-dawn.knsv   # Plasma state snapshot, applied at end of install
+  rose-pine-dawn.knsv   # Plasma state snapshot (incl. ~/.local/share/{color-schemes,plasma,aurorae,...})
 .chezmoiignore          # Files in this repo that chezmoi should NOT apply to $HOME
 ```
+
+Theme assets under `~/.local/share/` (color schemes, look-and-feel, aurorae, desktoptheme) are bundled into the konsave `.knsv` via its `export:` section, so they're not duplicated under a `dot_local/` tree. If you ever add per-user assets that konsave doesn't capture, put them under `dot_local/` and chezmoi will manage them.
 
 ## chezmoi naming
 
@@ -52,12 +53,21 @@ When adding a new dotfile, name the source path with the `dot_` prefix on every 
 `konsave/rose-pine-dawn.knsv` is a binary snapshot of the Plasma configuration. After making Plasma changes that should be part of the rice:
 
 ```bash
-konsave -s rose-pine-dawn         # save current state into the named profile
-konsave -e rose-pine-dawn         # export to .knsv in the cwd
-mv rose-pine-dawn.knsv konsave/
+konsave -s rose-pine-dawn -f      # overwrite the named profile with current state
+konsave -e rose-pine-dawn \
+  -d "$REPO_DIR/konsave" \
+  -n rose-pine-dawn               # export to <repo>/konsave/rose-pine-dawn.knsv
 ```
 
-Commit the regenerated `.knsv`. Note this file is ~9 MB — expect noisy diffs.
+konsave appends a timestamp to the filename despite `-n`; rename back to `rose-pine-dawn.knsv` before committing. The file is ~9 MB — expect noisy diffs.
+
+**Pitfall — color scheme must be a *named* scheme.** Plasma 6's first-session logic can reset `kdeglobals` if the active color scheme is identified only by `ColorSchemeHash` and not `ColorScheme=NAME`. To ensure the snapshot survives a fresh install:
+
+1. System Settings → Colors → "Save current colors as new scheme…" → give it a name (e.g. `RosePineDawnCustom`).
+2. Apply it (or run `plasma-apply-colorscheme RosePineDawnCustom`) so `kdeglobals [General]` gains a `ColorScheme=` line.
+3. Then re-export the konsave snapshot.
+
+`install.sh` runs `plasma-apply-colorscheme RosePineDawnCustom` after `konsave -a` to apply the named scheme to the live session.
 
 ### Testing changes to `install.sh`
 

@@ -55,6 +55,9 @@ echo "==> Importing Konsave profile"
 konsave -i "$REPO_DIR/konsave/rose-pine-dawn.knsv"
 konsave -a rose-pine-dawn
 
+echo "==> Applying color scheme by name"
+plasma-apply-colorscheme RosePineDawnCustom || true
+
 echo "==> Rebuilding icon caches"
 kbuildsycoca6 --noincremental || true
 
