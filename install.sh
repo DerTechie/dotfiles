@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+[[ -f /etc/arch-release ]] || {
+  echo "Not Arch. Aborting."
+  exit 1
+}
+
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -18,14 +23,13 @@ if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
 fi
 
 echo "==> Installing pacman packages"
-sudo pacman -S --needed --noconfirm - < "$REPO_DIR/packages/pacman.txt"
+sudo pacman -S --needed --noconfirm - <"$REPO_DIR/packages/pacman.txt"
 
 echo "==> Installing AUR packages"
-yay -S --needed --noconfirm - < "$REPO_DIR/packages/aur.txt"
+yay -S --needed --noconfirm - <"$REPO_DIR/packages/aur.txt"
 
 echo "==> Applying dotfiles via chezmoi"
-chezmoi init --source "$REPO_DIR"
-chezmoi apply
+chezmoi init --apply --source="$REPO_DIR"
 
 echo "==> Applying papirus folder color"
 papirus-folders -C palebrown --theme Papirus-Light
