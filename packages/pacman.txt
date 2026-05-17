@@ -20,6 +20,7 @@ efibootmgr
 elisa
 expac
 eza
+fastfetch
 fd
 firefox
 fzf

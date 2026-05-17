@@ -1,5 +1,7 @@
 # dotfiles
 
+![Desktop screenshot](assets/screenshot.png)
+
 My Arch Linux + KDE Plasma 6 + Rosé Pine Dawn rice.
 
 ## Restore on a fresh Arch install
@@ -13,6 +15,7 @@ bash ~/Repositories/github.com/DerTechie/dotfiles/install.sh
 
 - **Desktop:** KDE Plasma 6, Rosé Pine Dawn theme
 - **Terminal:** Ghostty with Rosé Pine Dawn/Moon (auto-switching)
+- **Editor:** Neovim with LazyVim + rose-pine-dawn
 - **Icons:** Papirus Light with palebrown folders
 - **Font:** JetBrains Mono Nerd Font
 
@@ -20,6 +23,7 @@ bash ~/Repositories/github.com/DerTechie/dotfiles/install.sh
 
 - [Rosé Pine](https://rosepinetheme.com/) palette and themes
 - [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) icons
+- [LazyVim](https://www.lazyvim.org/) Neovim distribution
 - [Konsave](https://github.com/Prayag2/konsave) for Plasma state
 - [chezmoi](https://www.chezmoi.io/) for dotfile management
 
