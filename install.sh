@@ -28,6 +28,17 @@ sudo pacman -S --needed --noconfirm - <"$REPO_DIR/packages/pacman.txt"
 echo "==> Installing AUR packages"
 yay -S --needed --noconfirm - <"$REPO_DIR/packages/aur.txt"
 
+echo "==> Enabling system services"
+sudo systemctl enable --now \
+  NetworkManager.service \
+  bluetooth.service \
+  cups.socket \
+  docker.service \
+  libvirtd.service
+
+echo "==> Adding $USER to docker and libvirt groups"
+sudo usermod -aG docker,libvirt "$USER"
+
 echo "==> Applying dotfiles via chezmoi"
 chezmoi init --apply --source="$REPO_DIR"
 
@@ -41,4 +52,4 @@ konsave -a rose-pine-dawn
 echo "==> Rebuilding icon caches"
 kbuildsycoca6 --noincremental || true
 
-echo "==> Done. Log out and back in to apply Plasma settings fully."
+echo "==> Done. Log out and back in to apply Plasma settings and group changes."
