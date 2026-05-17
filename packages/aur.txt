@@ -5,5 +5,4 @@ jetbrains-toolbox
 papirus-folders-git
 rose-pine-cursor
 rose-pine-gtk-theme-full
-ventoy
 yay
