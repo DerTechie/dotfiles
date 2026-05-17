@@ -2,10 +2,8 @@
 claude-desktop-appimage
 jdownloader2
 jetbrains-toolbox
-joplin-desktop
 papirus-folders-git
 rose-pine-cursor
 rose-pine-gtk-theme-full
 ventoy
 yay
-yay-debug
