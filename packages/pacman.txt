@@ -1,3 +1,4 @@
+akonadiconsole
 amd-ucode
 ark
 base
