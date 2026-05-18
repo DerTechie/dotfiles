@@ -34,7 +34,8 @@ sudo systemctl enable --now \
   bluetooth.service \
   cups.socket \
   docker.service \
-  libvirtd.service
+  libvirtd.service \
+  ollama.service
 
 echo "==> Adding $USER to docker and libvirt groups"
 sudo usermod -aG docker,libvirt "$USER"

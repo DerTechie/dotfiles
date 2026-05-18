@@ -57,6 +57,7 @@ networkmanager
 network-manager-applet
 nfs-utils
 obsidian
+ollama-rocm
 pacman-contrib
 papirus-icon-theme
 pavucontrol
