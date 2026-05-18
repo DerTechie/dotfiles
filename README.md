@@ -19,7 +19,12 @@ Log out and back in (or reboot) after the script finishes so group memberships (
 - **Terminal:** Ghostty with Rosé Pine Dawn/Moon (auto-switching)
 - **Editor:** Neovim with LazyVim + rose-pine-dawn
 - **Icons:** Papirus Light with palebrown folders
-- **Font:** JetBrains Mono Nerd Font
+- **Fonts:** Inter (UI), JetBrains Mono Nerd Font (terminal, fixed-width)
+
+## Fonts
+
+- **Inter** for the system UI. KDE defaults to Noto Sans, which is designed as a universal-script fallback — optimized for glyph coverage across writing systems, not for screen-UI density. Inter is purpose-built for computer screens (tall x-height, open apertures, tabular numbers, hinted for small UI sizes) and is the de-facto modern UI font on the web and in GNOME (as the basis for Adwaita Sans).
+- **JetBrains Mono Nerd Font** for monospace (Ghostty, Plasma's fixed-width slot, Neovim). Designed for code: increased letter height inside brackets/parens, distinguished similar glyphs (1/l/I, 0/O), and the Nerd Font variant bundles the icon glyphs that Ghostty, Lazygit, fastfetch, and Neovim plugins expect.
 
 ## Manual post-install steps
 
