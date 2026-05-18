@@ -36,6 +36,7 @@ gwenview
 htop
 hwinfo
 img2pdf
+inter-font
 jq
 kate
 kdepim-addons
