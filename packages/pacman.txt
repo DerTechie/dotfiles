@@ -55,6 +55,7 @@ neovim
 networkmanager
 network-manager-applet
 nfs-utils
+obsidian
 pacman-contrib
 papirus-icon-theme
 pavucontrol

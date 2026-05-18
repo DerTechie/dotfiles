@@ -19,6 +19,10 @@ bash ~/Repositories/github.com/DerTechie/dotfiles/install.sh
 - **Icons:** Papirus Light with palebrown folders
 - **Font:** JetBrains Mono Nerd Font
 
+## Manual post-install steps
+
+- **Obsidian** — settings (theme, plugins, hotkeys, appearance) are stored per-vault under `<vault>/.obsidian/` rather than globally, so they're not managed here. After opening a vault, install the Rosé Pine theme via Settings → Appearance → Themes → Manage → search "Rosé Pine".
+
 ## Credits
 
 - [Rosé Pine](https://rosepinetheme.com/) palette and themes
