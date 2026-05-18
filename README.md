@@ -11,6 +11,8 @@ git clone https://github.com/DerTechie/dotfiles.git ~/Repositories/github.com/De
 bash ~/Repositories/github.com/DerTechie/dotfiles/install.sh
 ```
 
+Log out and back in (or reboot) after the script finishes so group memberships (`docker`, `libvirt`) and the Plasma session pick up all changes.
+
 ## Stack
 
 - **Desktop:** KDE Plasma 6, Rosé Pine Dawn theme
