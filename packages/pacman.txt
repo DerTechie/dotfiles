@@ -26,6 +26,7 @@ fd
 firefox
 fzf
 gamescope
+geoclue
 ghostscript
 ghostty
 gimp
