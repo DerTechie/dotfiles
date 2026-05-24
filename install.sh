@@ -56,8 +56,26 @@ echo "==> Importing Konsave profile"
 konsave -i "$REPO_DIR/konsave/rose-pine-dawn.knsv"
 konsave -a rose-pine-dawn
 
-echo "==> Applying color scheme by name"
-plasma-apply-colorscheme RosePineDawnCustom || true
+echo "==> Installing Rosé Pine Global Themes"
+for theme in rose-pine-dawn rose-pine-main; do
+  if kpackagetool6 --type Plasma/LookAndFeel --list 2>/dev/null \
+        | grep -q "^org.dertechie.$theme$"; then
+    kpackagetool6 --type Plasma/LookAndFeel --upgrade "$REPO_DIR/themes/$theme"
+  else
+    kpackagetool6 --type Plasma/LookAndFeel --install "$REPO_DIR/themes/$theme"
+  fi
+done
+
+echo "==> Enabling automatic day/night Global Theme switching"
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key AutomaticLookAndFeel true
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key DefaultLightLookAndFeel org.dertechie.rose-pine-dawn
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key DefaultDarkLookAndFeel org.dertechie.rose-pine-main
+
+echo "==> Seeding initial Global Theme"
+plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn || true
 
 echo "==> Rebuilding icon caches"
 kbuildsycoca6 --noincremental || true
