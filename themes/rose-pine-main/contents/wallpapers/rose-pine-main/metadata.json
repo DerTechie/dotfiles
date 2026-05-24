@@ -1,0 +1,9 @@
+{
+  "KPlugin": {
+    "Id": "rose-pine-main",
+    "Name": "Rosé Pine",
+    "Authors": [{ "Name": "rose-pine contributors" }],
+    "License": "MIT",
+    "Version": "1.0"
+  }
+}
