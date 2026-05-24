@@ -1,0 +1,13 @@
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Id": "org.dertechie.rose-pine-dawn",
+    "Name": "Rosé Pine Dawn",
+    "Description": "Soho-vibe light theme based on the Rosé Pine Dawn palette",
+    "Authors": [{ "Name": "Mike Esser", "Email": "info@dertechie.de" }],
+    "Category": "Plasma Look and Feel",
+    "License": "MIT",
+    "Version": "1.0",
+    "Website": "https://github.com/DerTechie/dotfiles/tree/main/themes"
+  }
+}
