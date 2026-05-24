@@ -1,225 +1,349 @@
-# Rose Pine dark theme + day/night auto-switch
+# Rose Pine dark theme + day/night auto-switch (native Plasma 6.5+)
 
 Date: 2026-05-24
-Status: design approved, pending user review of spec → writing-plans
+Status: design approved, pending writing-plans
+
+## History
+
+A previous draft of this spec (commit `fb93c08`, same filename) was built around
+`darkman` as the scheduling daemon. That design was sound for Plasma 6.4 but
+predated the verification of two facts:
+
+- Plasma 6.5 (released 2025-10-21) shipped **native** automatic Global Theme
+  switching via `knighttime` / `plasma-knighttimed`, driven by `geoclue2`.
+- `xdg-desktop-portal-kde` already reports the freedesktop
+  `color-scheme` preference based on the active Plasma color scheme.
+- Ghostty implements CSI 2031, and Neovim 0.10+ natively reacts to it via
+  `OptionSet background`.
+
+Together those make `darkman` redundant on the rice's current stack
+(Plasma 6.6.5, Ghostty, nvim 0.12.2). This rewrite picks the native path.
 
 ## Goal
 
-Add a Rose Pine (main, dark) variant alongside the existing Rose Pine Dawn rice
+Add a Rose Pine main (dark) variant alongside the existing Rose Pine Dawn rice
 and have the system auto-switch at sunrise/sunset, covering the Plasma color
-scheme, icon theme, wallpaper, Ghostty, and Neovim — without requiring the user
-to flip anything by hand.
+scheme, icon theme, wallpaper, Ghostty, and Neovim — using KDE's built-in
+day/night cycle, with no third-party scheduler, no custom hooks, no cache
+files.
 
 ## Decisions
 
-- **Dark variant:** Rose Pine *main* (not Moon). Saved as a *named* Plasma color
-  scheme `RosePineCustom` for the same reason the existing
-  `RosePineDawnCustom` is named — Plasma 6's first-session logic can reset
-  `kdeglobals` if the active scheme is identified only by `ColorSchemeHash`
-  (see CLAUDE.md, "Updating the Konsave snapshot" pitfall).
-- **Switching daemon:** `darkman` (AUR). Uses `usegeoclue: true` so no
-  coordinates are checked into the public repo. `portal: true` makes Ghostty
-  and GTK apps follow the system preference automatically. `dbusserver: true`
-  exposes `darkman toggle` for manual override.
-- **Asset delivery:** the new Plasma color scheme and wallpaper land in
-  `~/.local/share/` and get baked into a re-exported `rose-pine-dawn.knsv`.
-  Matches the convention in CLAUDE.md ("theme assets are bundled into the
-  konsave `.knsv` via its `export:` section"); avoids splitting theme assets
-  across konsave and chezmoi.
-- **Neovim auto-flip:** libuv `vim.uv.new_fs_event()` watcher on
-  `~/.cache/darkman-mode` in `lua/config/autocmds.lua`. The darkman hook only
-  writes the file; running nvim instances pick it up on the next watcher tick.
-  No external signaling, no socket discovery.
+- **Two Plasma Global Themes**, packaged as proper KDE Look-and-Feel bundles:
+  `org.dertechie.rose-pine-dawn` and `org.dertechie.rose-pine-main`. Each
+  bundles its own color scheme, icon-theme reference, wallpaper, and
+  `defaults` mapping. Stock Breeze for Plasma Style and KWin decoration.
+- **Theme packages live in a top-level `themes/` directory** in this repo
+  (not `dot_local/`, not bundled in konsave). Each theme directory is
+  self-contained with `LICENSE` and `README.md`, structured for publication
+  to the KDE Store later via tar.gz upload. No separate repo for now.
+- **Scheduling is Plasma-native:** `plasma-knighttimed` + `geoclue2`,
+  controlled by four keys in `kdeglobals [KDE]`. No coordinates committed to
+  the repo (geolocation comes from system Location Services).
+- **Ghostty already wired correctly:** the existing
+  `theme = light:Rose Pine Dawn,dark:Rose Pine Moon` line in
+  `dot_config/ghostty/config.ghostty` becomes
+  `theme = light:Rose Pine Dawn,dark:Rose Pine` (palette name swap) and
+  starts working automatically once Plasma drives the portal preference.
+- **Neovim:** CSI 2031 + `OptionSet background` autocmd. No plugin, no DBus
+  listener, no fs-watcher, no cache file. Two small Lua edits.
+- **No `darkman`.** Not in `packages/aur.txt`, not in `install.sh`.
+- **No custom Plasma Style or KWin decoration.** Stock Breeze for both.
+- **Color schemes derived from [rose-pine/palette](https://github.com/rose-pine/palette)**
+  (MIT). Authored fresh, not vendored from `kelpwave/Rose-pine-for-KDE`
+  (which lacks a LICENSE file and is Moon-only anyway).
 
 ## Architecture
 
 ```
-┌────────────┐   sunrise/sunset    ┌─────────────┐
-│  geoclue2  │ ──────────────────▶ │   darkman   │ (systemd user unit)
-└────────────┘                     └──────┬──────┘
-                                          │ fires hooks + xdg-portal signal
-                          ┌───────────────┼────────────────┐
-                          ▼               ▼                ▼
-              ~/.config/darkman/    ~/.config/darkman/   xdg-desktop-portal
-              light-mode.d/*        dark-mode.d/*       (color-scheme: light|dark)
-                          │               │                │
-                          └───────┬───────┘                │
-                                  ▼                        ▼
-                  plasma-apply-colorscheme        Ghostty (auto, no extra code)
-                  plasma-apply-wallpaperimage     GTK apps via portal
-                  kwriteconfig6 (icon theme)
-                  touch ~/.cache/darkman-mode      ← read by nvim fs-watcher
+geoclue2                                  System Settings → Colors and Themes
+   │                                                │
+   ▼                                                │  user picks day theme + night theme
+plasma-knighttimed.service ◀─────────────  configuration (kdeglobals [KDE])
+   │  sunrise/sunset transitions
+   │
+   ▼
+KDE auto-switcher ──▶ plasma-apply-lookandfeel <day|night>
+                            │
+                            │  applies the bundled Global Theme:
+                            │     • color scheme
+                            │     • icon theme
+                            │     • plasma style (stays stock)
+                            │     • wallpaper
+                            ▼
+                xdg-desktop-portal-kde recomputes org.freedesktop.appearance.color-scheme
+                            │
+              ┌─────────────┼──────────────┐
+              ▼             ▼              ▼
+        Ghostty (auto)   GTK apps      Electron apps
+              │ via existing config line
+              │
+              ▼
+        Ghostty emits CSI 2031 to its child PTY
+              │
+              ▼
+        Neovim flips `vim.o.background`
+              │  OptionSet autocmd
+              ▼
+        :colorscheme rose-pine-dawn  /  :colorscheme rose-pine
 ```
 
-**Boundary contract:** darkman owns "what mode is it." Hook scripts own
-"translate mode → desktop state." Each hook is a single bash file that can be
-run directly for debugging.
+**Daemons doing real work:** `geoclue2` (sunrise/sunset times from location)
+and `plasma-knighttimed` (transition orchestrator). Both ship with the base
+Plasma 6 install. Nothing else we add is a daemon.
 
 ## Files
 
-### New, chezmoi-managed
+### New, top-level `themes/`
 
-| Path | Purpose |
-|---|---|
-| `dot_config/darkman/config.yaml` | `usegeoclue: true`, `portal: true`, `dbusserver: true` |
-| `dot_config/darkman/light-mode.d/10-plasma.sh` | Apply Dawn scheme + wallpaper, Papirus-Light, write mode file |
-| `dot_config/darkman/dark-mode.d/10-plasma.sh` | Apply Rose Pine main + wallpaper, Papirus-Dark, write mode file |
-| `dot_config/nvim/lua/config/theme.lua` | Shared `variant()` helper used by both colorscheme.lua and autocmds.lua |
+```
+themes/
+├── README.md                          # what these are, install, publish, prior-art note
+├── rose-pine-dawn/                    # publishable Global Theme package
+│   ├── LICENSE                        # MIT
+│   ├── metadata.json                  # KPackage metadata (Plasma 6 JSON format)
+│   └── contents/
+│       ├── defaults                   # INI mapping: ColorScheme, Icons.Theme, Wallpaper
+│       ├── previews/preview.png       # 480×270 screenshot for System Settings picker
+│       ├── colors/
+│       │   └── RosePineDawnCustom.colors
+│       └── wallpapers/
+│           └── rose-pine-dawn/
+│               ├── metadata.json
+│               └── contents/
+│                   ├── screenshot.png
+│                   └── images/3840x2160.png
+└── rose-pine-main/                    # symmetric; ColorScheme=RosePineCustom,
+    └── ...                              # Icons.Theme=Papirus-Dark, etc.
+```
 
-### New, live system → bundled into the konsave snapshot
+### `metadata.json` shape (Dawn; Main is symmetric)
 
-| Path | Purpose |
-|---|---|
-| `~/.local/share/color-schemes/RosePineCustom.colors` | Rose Pine main palette as a named Plasma color scheme |
-| `~/.local/share/wallpapers/RosePineMain/contents/images/...` | Rose Pine main wallpaper (picked from rosepinetheme.com; swappable later) |
+```json
+{
+  "KPackageStructure": "Plasma/LookAndFeel",
+  "KPlugin": {
+    "Id": "org.dertechie.rose-pine-dawn",
+    "Name": "Rosé Pine Dawn",
+    "Description": "Soho-vibe light theme based on the Rosé Pine Dawn palette",
+    "Authors": [{ "Name": "Mike Esser", "Email": "info@dertechie.de" }],
+    "Category": "Plasma Look and Feel",
+    "License": "MIT",
+    "Version": "1.0",
+    "Website": "https://github.com/DerTechie/dotfiles/tree/main/themes"
+  }
+}
+```
 
-### Modified
+### `defaults` file (Dawn)
+
+INI-formatted; `[section][group]` headers point to Plasma config file + group.
+
+```ini
+[kdeglobals][KDE]
+LookAndFeelPackage=org.dertechie.rose-pine-dawn
+
+[kdeglobals][General]
+ColorScheme=RosePineDawnCustom
+
+[kdeglobals][Icons]
+Theme=Papirus-Light
+
+[plasmarc][Theme]
+name=default
+
+[kwinrc][org.kde.kdecoration2]
+library=org.kde.breeze
+theme=Breeze
+
+[Wallpaper]
+Image=rose-pine-dawn
+```
+
+Main differs in: `Id` slug, `ColorScheme=RosePineCustom`,
+`Icons.Theme=Papirus-Dark`, `Wallpaper=rose-pine-main`.
+
+### Repo files that change
 
 | Path | Change |
 |---|---|
-| `packages/aur.txt` | Add `darkman` (preserve alphabetical order) |
-| `install.sh` | `systemctl --user enable --now darkman.service` + `darkman run --once` |
-| `dot_config/ghostty/config.ghostty` | `dark:Rose Pine Moon` → `dark:Rose Pine` |
-| `dot_config/nvim/lua/plugins/colorscheme.lua` | Replace static `colorscheme = "rose-pine-dawn"` with `colorscheme = require("config.theme").variant()` |
-| `dot_config/nvim/lua/config/autocmds.lua` | Append fs-watcher block to existing file |
-| `konsave/rose-pine-dawn.knsv` | Re-export so it carries the new `.colors` file + wallpaper |
-| `README.md` | Stack section: dual theme + darkman note |
-| `CLAUDE.md` | Extend the "named color scheme" pitfall to cover both schemes |
+| `install.sh` | Install both Look-and-Feel packages via `kpackagetool6`; wire up auto-switch via `kwriteconfig6`; drop the `plasma-apply-colorscheme RosePineDawnCustom` line. |
+| `packages/pacman.txt` | No additions. `knighttime`, `geoclue`, `kpackagetool6` already pulled in by `plasma-meta`. |
+| `packages/aur.txt` | **No additions.** No `darkman`. |
+| `dot_config/ghostty/config.ghostty` | `dark:Rose Pine Moon` → `dark:Rose Pine`. |
+| `dot_config/nvim/lua/plugins/colorscheme.lua` | Replace static `colorscheme = "rose-pine-dawn"` with a function reading `vim.o.background`. |
+| `dot_config/nvim/lua/config/autocmds.lua` | Append one `OptionSet background` autocmd that calls `:colorscheme`. |
+| `konsave/rose-pine-dawn.knsv` | Re-export. Strips bundled `~/.local/share/color-schemes/*` and `~/.local/share/wallpapers/*` (those moved into the theme packages). Keeps panel/widget/dolphin state and the new `kdeglobals [KDE]` keys. |
+| `CLAUDE.md` | Document the `themes/` directory and its publish-readiness rationale; update the konsave section to reflect its reduced scope; keep the named-color-scheme pitfall. |
+| `README.md` | Stack section: dual Rose Pine Global Themes + KDE-native day/night auto-switch. |
 
-## Hook script contracts
+## Plasma configuration
 
-Each hook script:
+Verified against `kcms/lookandfeel/lookandfeelsettings.kcfg` in
+plasma-workspace master. All keys live in `~/.config/kdeglobals` group `[KDE]`.
 
-- Is a single bash file with `set -euo pipefail` and `echo "==> ..."` step
-  banners, matching `install.sh` style.
-- Is independently runnable for debugging: `bash ~/.config/darkman/dark-mode.d/10-plasma.sh`.
-- Writes `dark` or `light` to `~/.cache/darkman-mode` as its last step.
+| Key | Value | Default | Notes |
+|---|---|---|---|
+| `AutomaticLookAndFeel` | `true` | `false` | Master switch. |
+| `DefaultLightLookAndFeel` | `org.dertechie.rose-pine-dawn` | `org.kde.breeze.desktop` | Day theme. |
+| `DefaultDarkLookAndFeel` | `org.dertechie.rose-pine-main` | `org.kde.breezedark.desktop` | Night theme. |
+| `AutomaticLookAndFeelOnIdle` | (default `true`) | `true` | Only flip when user has been idle ≥ N seconds. |
+| `AutomaticLookAndFeelIdleInterval` | (default `5`) | `5` | Friendly to mid-task transitions. |
 
-### `dark-mode.d/10-plasma.sh`
+**Precondition — location:** `plasma-knighttimed` reads location via KDE's
+geolocation (which delegates to `geoclue2`). The user must have **Location
+Services enabled** in System Settings → Privacy → Location for sunrise/sunset
+to be computed. `install.sh` does not enable Location Services automatically —
+that would surprise visitors who fork the repo on a private machine.
+`README.md` documents the precondition.
+
+## `install.sh` additions
+
+After the existing chezmoi + papirus-folders + konsave blocks:
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
+echo "==> Installing Rosé Pine Global Themes"
+for theme in rose-pine-dawn rose-pine-main; do
+  if kpackagetool6 --type Plasma/LookAndFeel --list 2>/dev/null \
+        | grep -q "^org.dertechie.$theme$"; then
+    kpackagetool6 --type Plasma/LookAndFeel --upgrade "$REPO_DIR/themes/$theme"
+  else
+    kpackagetool6 --type Plasma/LookAndFeel --install "$REPO_DIR/themes/$theme"
+  fi
+done
 
-echo "==> Switching to Rose Pine (dark)"
+echo "==> Enabling automatic day/night Global Theme switching"
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key AutomaticLookAndFeel true
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key DefaultLightLookAndFeel org.dertechie.rose-pine-dawn
+kwriteconfig6 --file kdeglobals --group KDE \
+  --key DefaultDarkLookAndFeel org.dertechie.rose-pine-main
 
-plasma-apply-colorscheme RosePineCustom
-plasma-apply-wallpaperimage \
-  "$HOME/.local/share/wallpapers/RosePineMain/contents/images/3840x2160.png"
-
-kwriteconfig6 --file kdeglobals --group Icons --key Theme Papirus-Dark
-qdbus6 org.kde.KWin /KWin reconfigure 2>/dev/null || true
-
-echo "dark" > "$HOME/.cache/darkman-mode"
+echo "==> Seeding initial Global Theme"
+plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn || true
 ```
 
-### `light-mode.d/10-plasma.sh`
+And **remove** the existing line:
 
-Symmetric: `RosePineDawnCustom`, dawn wallpaper path, `Papirus-Light`,
-write `light`.
+```bash
+# REMOVED:
+# plasma-apply-colorscheme RosePineDawnCustom || true
+```
+
+**Idempotency:** `kpackagetool6 --upgrade` updates an existing package without
+error; the if/else handles the first-install case. `kwriteconfig6` overwrites
+to the desired values on every run. `plasma-apply-lookandfeel` on an already-
+active theme is a no-op visually. Re-running `install.sh` on a configured
+system is safe.
 
 ## Neovim integration
 
-`lua/config/theme.lua`:
+### `dot_config/nvim/lua/plugins/colorscheme.lua` (replaces current content)
 
 ```lua
-local M = {}
-local mode_file = vim.fn.expand("~/.cache/darkman-mode")
-
-function M.variant()
-  local f = io.open(mode_file, "r")
-  if not f then return "rose-pine-dawn" end
-  local m = f:read("*l"); f:close()
-  return m == "dark" and "rose-pine-main" or "rose-pine-dawn"
+local function variant()
+  return vim.o.background == "dark" and "rose-pine" or "rose-pine-dawn"
 end
 
-return M
-```
-
-`lua/config/autocmds.lua` (appended to existing file):
-
-```lua
-local theme = require("config.theme")
-
-local apply = vim.schedule_wrap(function()
-  pcall(vim.cmd.colorscheme, theme.variant())
-end)
-
-local w = vim.uv.new_fs_event()
-if w then
-  w:start(vim.fn.expand("~/.cache/darkman-mode"), {}, function() apply() end)
-end
-```
-
-`lua/plugins/colorscheme.lua`:
-
-```lua
 return {
   { "rose-pine/neovim", name = "rose-pine" },
+
   {
     "LazyVim/LazyVim",
-    opts = { colorscheme = require("config.theme").variant() },
+    opts = { colorscheme = variant() },
   },
 }
 ```
 
-The fs-watcher fires on file change; `vim.schedule_wrap` lands the colorscheme
-call on the main loop. Both running nvim and freshly-started nvim land on the
-same variant.
+### `dot_config/nvim/lua/config/autocmds.lua` (appended to existing file)
 
-## install.sh additions
-
-After the existing "Enabling system services" block:
-
-```bash
-echo "==> Enabling darkman (user service)"
-systemctl --user enable --now darkman.service
+```lua
+vim.api.nvim_create_autocmd("OptionSet", {
+  pattern = "background",
+  callback = function()
+    local scheme = vim.v.option_new == "dark" and "rose-pine" or "rose-pine-dawn"
+    pcall(vim.cmd.colorscheme, scheme)
+  end,
+})
 ```
 
-After the existing "Applying color scheme by name" block:
+### Rose Pine plugin variant naming
 
-```bash
-echo "==> Seeding initial light/dark mode"
-darkman run --once || true
-```
+| Plugin variant | Background | Use |
+|---|---|---|
+| `rose-pine-dawn` | light | day |
+| `rose-pine` | dark | night (our pick) |
+| `rose-pine-moon` | dark, more muted | not used |
 
-Both are idempotent on an already-set-up system. `|| true` on the seeding call
-covers the first-boot edge case where geoclue hasn't reported a position yet —
-the hook re-fires at the next sunrise/sunset regardless.
+Matches Ghostty's bundled theme names (`Rose Pine Dawn`, `Rose Pine`,
+`Rose Pine Moon`).
 
-## Konsave update workflow (one-time, for this change)
+### Graceful degradation
 
-Following the existing pitfall workflow in CLAUDE.md:
+| Environment | Behavior |
+|---|---|
+| nvim inside Ghostty | Auto-flips. |
+| nvim inside a TTY | Stuck on light. Acceptable — TTY has no portal. |
+| nvim inside a non-2031 terminal | Stuck on whatever the terminal reports. Acceptable — the rice only uses Ghostty. |
+| nvim inside tmux | Currently broken (tmux/tmux#4286 — tmux doesn't pass CSI 2031). Documented as a known gap. If tmux becomes part of the rice, switch to `auto-dark-mode.nvim` as the fallback. |
 
-1. System Settings → Colors → "Save current colors as new scheme…" →
-   `RosePineCustom` (with Rose Pine main palette loaded).
-2. Drop the Rose Pine main wallpaper at
-   `~/.local/share/wallpapers/RosePineMain/contents/images/...`.
-3. Switch the live color scheme back to Dawn so the snapshot's active scheme
-   stays light: `plasma-apply-colorscheme RosePineDawnCustom`.
-4. `konsave -s rose-pine-dawn -f` (overwrite the named profile with current state).
-5. `konsave -e rose-pine-dawn -d "$REPO_DIR/konsave" -n rose-pine-dawn`,
-   rename off the timestamp suffix, commit.
+## Konsave's reduced scope
+
+The `.knsv` snapshot previously bundled theme assets (`~/.local/share/color-schemes/`,
+`~/.local/share/wallpapers/`, etc.). With Global Theme packaging, those move
+into `themes/`. Konsave now owns:
+
+- Panel layouts, widget configs, dolphin/kate/etc application state.
+- The `kdeglobals [KDE]` keys driving auto-switch (so a fresh install lands
+  with auto-switch already configured).
+
+It no longer owns: `~/.local/share/color-schemes/*`,
+`~/.local/share/wallpapers/*`, `~/.local/share/plasma/look-and-feel/*`.
+The `.knsv` shrinks. `CLAUDE.md`'s "Updating the Konsave snapshot" section
+needs corresponding edits — defer specifics to the implementation plan.
 
 ## Out of scope
 
-- KDE global theme / look-and-feel swap. The Dawn look-and-feel is already
-  bundled; a separate Rose Pine main look-and-feel is not.
-- GTK dark theme switching — handled automatically by
-  `rose-pine-gtk-theme-full` + xdg-desktop-portal once darkman sets the
-  preference.
-- Cursor theme swap (`rose-pine-cursor` has no dark variant).
-- Obsidian — still a manual post-install step per the README.
-- Per-app retry if a hook step fails. Hooks log to journald via the
-  `darkman.service` unit; debug by running the hook script directly.
+- **`darkman`** — replaced by Plasma 6.5+ native.
+- **Custom hook scripts, state files, cache files** — KDE owns orchestration.
+- **Custom Plasma Style** — stock Breeze is color-scheme-aware.
+- **Custom KWin decoration** — stock Breeze decoration is color-scheme-aware.
+- **Cursor theme swap** — `rose-pine-cursor` has no dark variant.
+- **Splash screen** — cosmetic, low ROI.
+- **Tmux** — not currently part of the rice; CSI 2031 doesn't traverse tmux yet.
+- **Konsole color sync** — rice uses Ghostty, not Konsole.
+- **Obsidian** — manual post-install step, unchanged.
+- **Publishing to KDE Store** — `themes/` is structured for it; actual upload is a later task.
+
+## Open questions (for writing-plans / implementation)
+
+1. **Exact wallpaper file** for Rose Pine main (and Dawn — current Dawn rice
+   may be using something we should snapshot or replace).
+2. **Color scheme mapping** — palette role → KDE color role decisions
+   (e.g. `BackgroundNormal` ← `base` vs `surface`).
+3. **`kpackagetool6 --upgrade` semantics** on a never-installed package —
+   the sketched if/else covers both cases but verify in fresh-install test.
+4. **`plasma-apply-lookandfeel --apply` vs knighttimed override.** Does the
+   seeding call get respected, or will knighttimed flip it back immediately?
+   If knighttimed handles seeding itself once `AutomaticLookAndFeel=true`,
+   the manual seeding line is dead weight.
+5. **Konsave re-export workflow** changes — exact CLAUDE.md edits.
 
 ## Success criteria
 
-- `darkman toggle` flips Plasma color scheme, icon theme, wallpaper, and
-  running Neovim sessions within ~1 second.
-- On a fresh Arch install, `bash install.sh` lands in the correct day/night
-  mode for the time of day.
-- Ghostty respects the portal preference (existing `light:/dark:` config line
-  starts working without further changes).
-- Re-running `install.sh` on a configured system is safe and a no-op for
-  darkman setup.
+1. Fresh Arch install: `bash install.sh` lands in the correct day/night
+   theme for the current time of day, with all surfaces (Plasma color
+   scheme, icons, wallpaper, Ghostty, running Neovim) matching.
+2. Manual toggle via System Settings → Quick Settings (or
+   `plasma-apply-lookandfeel --apply org.dertechie.rose-pine-main`) flips
+   every surface within a couple of seconds, gated by the 5s idle threshold.
+3. Natural sunset transition flips everything correctly. The idle gate
+   prevents mid-task surprises.
+4. Re-running `bash install.sh` on a configured system is a no-op for
+   theme state.
+5. Each `themes/<name>/` directory is standalone-installable by an outsider:
+   `git clone`, then `kpackagetool6 -t Plasma/LookAndFeel -i themes/rose-pine-dawn`.
+6. Both `.colors` files preview correctly in System Settings → Colors.
+7. No `darkman` references remain in `packages/aur.txt`, `install.sh`, or
+   anywhere else in the repo.
