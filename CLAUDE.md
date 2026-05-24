@@ -4,7 +4,7 @@ Guidance for Claude Code when working in this repo.
 
 ## What this repo is
 
-Personal dotfiles for bootstrapping a fresh Arch Linux + KDE Plasma 6 install on the owner's machine. It is public so others can copy whatever pieces they find useful (themes, package lists, ghostty config), but it is **not** a generic framework — assume the owner is the only "user" and that defaults are tailored to their hardware (AMD GPU, amd-ucode) and preferences (Rosé Pine Dawn/Moon, JetBrains Mono Nerd Font).
+Personal dotfiles for bootstrapping a fresh Arch Linux + KDE Plasma 6 install on the owner's machine. It is public so others can copy whatever pieces they find useful (themes, package lists, ghostty config), but it is **not** a generic framework — assume the owner is the only "user" and that defaults are tailored to their hardware (AMD GPU, amd-ucode) and preferences (Rosé Pine Dawn/Main, JetBrains Mono Nerd Font).
 
 `install.sh` is the entry point on a fresh system; everything else exists to support it.
 
