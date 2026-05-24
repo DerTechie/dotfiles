@@ -66,8 +66,16 @@ for theme in rose-pine-dawn rose-pine-main; do
   fi
 done
 
-echo "==> Seeding initial Global Theme"
-plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn || true
+echo "==> Seeding initial Global Theme (Dawn)"
+# -k preserves AutomaticLookAndFeel. plasma-apply-lookandfeel only sets
+# [General] ColorScheme= and (sometimes) wallpaper — it does NOT write
+# [WM] colors or override a user-pinned wallpaper. The two follow-up
+# calls force [WM] to match the scheme and pin the bundle's wallpaper.
+plasma-apply-lookandfeel -k --apply org.dertechie.rose-pine-dawn || true
+plasma-apply-colorscheme RosePineDawnCustom || true
+plasma-apply-wallpaperimage \
+  "$HOME/.local/share/plasma/look-and-feel/org.dertechie.rose-pine-dawn/contents/wallpapers/rose-pine-dawn/contents/images/3840x2160.png" \
+  || true
 
 echo "==> Enabling automatic day/night Global Theme switching"
 kwriteconfig6 --file kdeglobals --group KDE \

@@ -26,6 +26,14 @@ Log out and back in (or reboot) after the script finishes so group memberships (
 - **Inter** for the system UI. KDE defaults to Noto Sans, which is designed as a universal-script fallback — optimized for glyph coverage across writing systems, not for screen-UI density. Inter is purpose-built for computer screens (tall x-height, open apertures, tabular numbers, hinted for small UI sizes) and is the de-facto modern UI font on the web and in GNOME (as the basis for Adwaita Sans).
 - **JetBrains Mono Nerd Font** for monospace (Ghostty, Plasma's fixed-width slot, Neovim). Designed for code: increased letter height inside brackets/parens, distinguished similar glyphs (1/l/I, 0/O), and the Nerd Font variant bundles the icon glyphs that Ghostty, Lazygit, fastfetch, and Neovim plugins expect.
 
+## Manual override
+
+`rose-pine dawn|main|auto` (installed at `~/.local/bin/rose-pine`) flips the
+Global Theme without going through System Settings. It applies the Look-and-Feel,
+forces the color scheme's `[WM]` titlebar colors into `kdeglobals` (Plasma's
+own L&F applier doesn't), and pins the bundle's wallpaper. `rose-pine auto`
+re-enables the day/night auto-switch.
+
 ## Manual post-install steps
 
 - **Enable Location Services** — System Settings → Privacy → Location → enable. `plasma-knighttimed` reads location via `geoclue2` to compute sunrise/sunset. Without this, the Global Theme stays on whichever variant was last applied.

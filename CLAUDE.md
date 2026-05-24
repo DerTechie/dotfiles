@@ -115,11 +115,37 @@ a fresh install:
 3. Then re-export the konsave snapshot.
 
 `install.sh` seeds the live session via
-`plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn` before
-writing the auto-switch keys via `kwriteconfig6`. The order matters:
-`plasma-apply-lookandfeel` strips `AutomaticLookAndFeel` from `kdeglobals
-[KDE]`, so the seeding step runs first and the auto-switch enable runs
-last.
+`plasma-apply-lookandfeel -k --apply org.dertechie.rose-pine-dawn`, then
+chains `plasma-apply-colorscheme RosePineDawnCustom` and
+`plasma-apply-wallpaperimage <bundle>/contents/wallpapers/.../3840x2160.png`
+before writing the auto-switch keys via `kwriteconfig6`. All three calls
+are needed because:
+
+- `plasma-apply-lookandfeel` writes `[General] ColorScheme=NAME` and
+  (sometimes) the wallpaper, but it does **not** propagate the color
+  scheme's `[WM]` section into `kdeglobals`. Without `plasma-apply-colorscheme`,
+  titlebars keep the previous WM colors (e.g. Breeze gray) over Rose
+  Pine widget colors, producing the "window titles look off" symptom.
+- `plasma-apply-lookandfeel` honors user-pinned wallpapers (won't
+  override an absolute path the user previously set), so wallpaper has
+  to be applied explicitly.
+- The `-k/--keep-auto` flag prevents `plasma-apply-lookandfeel` from
+  stripping `AutomaticLookAndFeel`. Without it, manual reapplies (CLI
+  or System Settings → Global Themes) silently disable the day/night
+  switch.
+
+### `rose-pine` helper
+
+`dot_local/bin/executable_rose-pine` (chezmoi-deployed to
+`~/.local/bin/rose-pine`) is a thin wrapper that does the full triple
+apply (`-k --apply` → `plasma-apply-colorscheme` → `plasma-apply-wallpaperimage`)
+for `dawn` or `main`, and `rose-pine auto` re-enables `AutomaticLookAndFeel`.
+
+It bounces through the *other* variant's color scheme before applying
+the target — `plasma-apply-colorscheme` short-circuits with "already set"
+when `[General] ColorScheme=` already names the target (which it does
+after `plasma-apply-lookandfeel`), and short-circuiting skips the `[WM]`
+rewrite. The bounce forces the rewrite.
 
 ### Testing changes to `install.sh`
 

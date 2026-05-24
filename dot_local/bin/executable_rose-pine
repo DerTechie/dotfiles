@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# rose-pine: switch the Plasma Global Theme between the Rose Pine variants.
+#
+# Why this exists: applying a Plasma Look-and-Feel via System Settings
+# or `plasma-apply-lookandfeel` alone does not (a) rewrite kdeglobals'
+# [WM] section for window-titlebar colors and (b) override a user-pinned
+# wallpaper. This helper drives all three surfaces atomically.
+#
+# Usage:
+#   rose-pine dawn   # apply Rose Pine Dawn (light)
+#   rose-pine main   # apply Rose Pine (dark) — alias: dark
+#   rose-pine auto   # re-enable Plasma 6.5+ day/night auto-switch
+set -euo pipefail
+
+usage() { echo "Usage: rose-pine dawn|main|auto" >&2; exit "${1:-1}"; }
+
+case "${1:-}" in
+  dawn)       lnf=org.dertechie.rose-pine-dawn; scheme=RosePineDawnCustom; other=RosePineCustom;       bundle=rose-pine-dawn ;;
+  main|dark)  lnf=org.dertechie.rose-pine-main; scheme=RosePineCustom;     other=RosePineDawnCustom;   bundle=rose-pine-main ;;
+  auto)
+    kwriteconfig6 --file kdeglobals --group KDE --key AutomaticLookAndFeel true
+    echo "AutomaticLookAndFeel enabled. plasma-knighttimed manages Dawn ↔ Main."
+    echo "Requires geoclue + System Settings → Privacy → Location enabled."
+    exit 0 ;;
+  -h|--help)  usage 0 ;;
+  *)          usage ;;
+esac
+
+wallpaper="$HOME/.local/share/plasma/look-and-feel/$lnf/contents/wallpapers/$bundle/contents/images/3840x2160.png"
+
+plasma-apply-lookandfeel -k --apply "$lnf"
+# plasma-apply-lookandfeel writes [General] ColorScheme= but never the
+# [WM] section. plasma-apply-colorscheme short-circuits when [General]
+# already names the target — so bounce through the other variant to
+# force a rewrite of [WM].
+plasma-apply-colorscheme "$other" >/dev/null 2>&1 || true
+plasma-apply-colorscheme "$scheme"
+plasma-apply-wallpaperimage "$wallpaper"
