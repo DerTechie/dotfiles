@@ -15,10 +15,10 @@ Log out and back in (or reboot) after the script finishes so group memberships (
 
 ## Stack
 
-- **Desktop:** KDE Plasma 6, Rosé Pine Dawn theme
-- **Terminal:** Ghostty with Rosé Pine Dawn/Moon (auto-switching)
-- **Editor:** Neovim with LazyVim + rose-pine-dawn
-- **Icons:** Papirus Light with palebrown folders
+- **Desktop:** KDE Plasma 6 with native day/night Global Theme auto-switch (Rosé Pine Dawn ↔ Rosé Pine, driven by `plasma-knighttimed` + `geoclue2`)
+- **Terminal:** Ghostty with Rosé Pine Dawn/Rosé Pine (follows the freedesktop appearance portal)
+- **Editor:** Neovim with LazyVim, flipping rose-pine-dawn ↔ rose-pine via CSI 2031 / `OptionSet background`
+- **Icons:** Papirus Light (day) / Papirus Dark (night) with palebrown folders
 - **Fonts:** Inter (UI), JetBrains Mono Nerd Font (terminal, fixed-width)
 
 ## Fonts
@@ -28,11 +28,13 @@ Log out and back in (or reboot) after the script finishes so group memberships (
 
 ## Manual post-install steps
 
+- **Enable Location Services** — System Settings → Privacy → Location → enable. `plasma-knighttimed` reads location via `geoclue2` to compute sunrise/sunset. Without this, the Global Theme stays on whichever variant was last applied.
 - **Obsidian** — settings (theme, plugins, hotkeys, appearance) are stored per-vault under `<vault>/.obsidian/` rather than globally, so they're not managed here. After opening a vault, install the Rosé Pine theme via Settings → Appearance → Themes → Manage → search "Rosé Pine".
 
 ## Credits
 
 - [Rosé Pine](https://rosepinetheme.com/) palette and themes
+- [rose-pine/wallpapers](https://github.com/rose-pine/wallpapers) for the 4K wallpapers bundled in `themes/`
 - [Papirus](https://github.com/PapirusDevelopmentTeam/papirus-icon-theme) icons
 - [LazyVim](https://www.lazyvim.org/) Neovim distribution
 - [Konsave](https://github.com/Prayag2/konsave) for Plasma state
