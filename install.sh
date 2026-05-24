@@ -85,6 +85,18 @@ kwriteconfig6 --file kdeglobals --group KDE \
 kwriteconfig6 --file kdeglobals --group KDE \
   --key DefaultDarkLookAndFeel org.dertechie.rose-pine-main
 
+echo "==> Seeding Day-Night Cycle location (Manual, Berlin default)"
+# knighttimed's "Automatic" mode is broken on vanilla Arch: KDE ships no
+# geoclue agent and geoclue's default [ip] backend uses Mozilla Location
+# Service, which shut down in 2024. Falling back to Manual with a Berlin
+# default — override via System Settings → Day-Night Cycle for precise
+# local sunrise/sunset. Idempotent: only seeds when the file is missing.
+if [[ ! -f "$HOME/.config/knighttimerc" ]]; then
+  kwriteconfig6 --file knighttimerc --group Location --key Automatic false
+  kwriteconfig6 --file knighttimerc --group Location --key Latitude  52.52
+  kwriteconfig6 --file knighttimerc --group Location --key Longitude 13.40
+fi
+
 echo "==> Rebuilding icon caches"
 kbuildsycoca6 --noincremental || true
 

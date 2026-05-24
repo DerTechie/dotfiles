@@ -15,7 +15,7 @@ Log out and back in (or reboot) after the script finishes so group memberships (
 
 ## Stack
 
-- **Desktop:** KDE Plasma 6 with native day/night Global Theme auto-switch (Rosé Pine Dawn ↔ Rosé Pine, driven by `plasma-knighttimed` + `geoclue2`)
+- **Desktop:** KDE Plasma 6 with native day/night Global Theme auto-switch (Rosé Pine Dawn ↔ Rosé Pine, driven by `plasma-knighttimed` with a manual lat/lon — geoclue's Automatic mode is broken on vanilla Arch because Mozilla Location Service shut down in 2024 and there's no KDE geoclue agent)
 - **Terminal:** Ghostty with Rosé Pine Dawn/Rosé Pine (follows the freedesktop appearance portal)
 - **Editor:** Neovim with LazyVim, flipping rose-pine-dawn ↔ rose-pine via CSI 2031 / `OptionSet background`
 - **Icons:** Papirus Light (day) / Papirus Dark (night) with palebrown folders
@@ -36,7 +36,7 @@ re-enables the day/night auto-switch.
 
 ## Manual post-install steps
 
-- **Enable Location Services** — System Settings → Privacy → Location → enable. `plasma-knighttimed` reads location via `geoclue2` to compute sunrise/sunset. Without this, the Global Theme stays on whichever variant was last applied.
+- **Adjust your Day-Night Cycle location** (optional) — `install.sh` seeds `~/.config/knighttimerc` with a Berlin default (52.52, 13.40). Override via System Settings → Day-Night Cycle → Location: Manual if you want precise local sunrise/sunset. KDE's "Automatic" option there is broken on Arch (see Stack note above) so leave it on Manual.
 - **Obsidian** — settings (theme, plugins, hotkeys, appearance) are stored per-vault under `<vault>/.obsidian/` rather than globally, so they're not managed here. After opening a vault, install the Rosé Pine theme via Settings → Appearance → Themes → Manage → search "Rosé Pine".
 
 ## Credits

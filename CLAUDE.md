@@ -147,6 +147,39 @@ when `[General] ColorScheme=` already names the target (which it does
 after `plasma-apply-lookandfeel`), and short-circuiting skips the `[WM]`
 rewrite. The bounce forces the rewrite.
 
+### `plasma-knighttimed` location (`knighttimerc`)
+
+The day/night switch needs a location to compute sunrise/sunset.
+Config file is `~/.config/knighttimerc`:
+
+```ini
+[Location]
+Automatic=false
+Latitude=52.52
+Longitude=13.40
+```
+
+`install.sh` seeds these keys (Berlin default) only when the file is
+missing, so re-running the script never clobbers a user-set location.
+Override via System Settings → Day-Night Cycle for precise local coords.
+
+**Do not rely on `Automatic=true`.** On vanilla Arch + KDE it gives a
+(0, 0) equator schedule (`noon` at local 12:00, transitions at exactly
+±6h) because:
+
+1. KDE ships no geoclue agent, so headless apps need an allowlist entry
+   in `/etc/geoclue/conf.d/<name>.conf` (e.g. `[org.kde.knighttimed]
+   allowed=true system=true`).
+2. Even with permission, geoclue's default `[ip]` backend method is
+   `ichnaea` — that's the Mozilla Location Service URL, which Mozilla
+   shut down in 2024. All `[ip]` requests return HTTP 404.
+3. The `[wifi]` backend defaults to `api.beacondb.net` (alive) but
+   needs WiFi hardware + nearby APs in BeaconDB.
+
+A working Automatic setup needs *both* the agent drop-in *and* an `[ip]`
+method override (e.g. `method=reallyfreegeoip` for IP-only desktops).
+Not worth the moving parts for a single-user rice — Manual is fine.
+
 ### Testing changes to `install.sh`
 
 `install.sh` is destructive enough (sudo, pacman, sed on `/etc/pacman.conf`) that it should not be edited blindly. Before pushing changes:
