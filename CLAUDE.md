@@ -11,25 +11,26 @@ Personal dotfiles for bootstrapping a fresh Arch Linux + KDE Plasma 6 install on
 ## Repo layout
 
 ```
-install.sh              # One-shot bootstrap: yay → pacman → AUR → services → chezmoi → konsave
+install.sh              # One-shot bootstrap: yay → pacman → AUR → services → chezmoi → konsave → themes
 packages/
   pacman.txt            # Official-repo packages, one per line
   aur.txt               # AUR packages, one per line
 dot_bashrc              # chezmoi source for ~/.bashrc
 dot_config/             # chezmoi source for ~/.config/...
+themes/                 # Publishable KDE Look-and-Feel packages (rose-pine-dawn, rose-pine-main)
 konsave/
-  rose-pine-dawn.knsv   # Plasma state snapshot (incl. ~/.local/share/{color-schemes,plasma,aurorae,...})
+  rose-pine-dawn.knsv   # Plasma state snapshot (panel/widget/dolphin state + kdeglobals [KDE] keys)
 .chezmoiignore          # Files in this repo that chezmoi should NOT apply to $HOME
 ```
 
-Theme assets under `~/.local/share/` (color schemes, look-and-feel, aurorae, desktoptheme) are bundled into the konsave `.knsv` via its `export:` section, so they're not duplicated under a `dot_local/` tree. If you ever add per-user assets that konsave doesn't capture, put them under `dot_local/` and chezmoi will manage them.
+Plasma Global Themes live in [`themes/`](themes/) as proper KDE Look-and-Feel packages and are installed by `install.sh` via `kpackagetool6`. The konsave `.knsv` no longer bundles `~/.local/share/{color-schemes,wallpapers,plasma/look-and-feel}` — it now carries only panel/widget/dolphin/etc. application state plus the `kdeglobals [KDE]` keys that drive day/night auto-switching. If you ever add per-user assets that neither `themes/` nor konsave captures, put them under `dot_local/` and chezmoi will manage them.
 
 ## chezmoi naming
 
 This repo is managed with [chezmoi](https://www.chezmoi.io/). File and directory names follow chezmoi's source-name conventions:
 
 - `dot_foo` → `~/.foo` (e.g. `dot_bashrc` → `~/.bashrc`, `dot_config/ghostty/` → `~/.config/ghostty/`)
-- Anything that should live in the repo but **not** be applied to `$HOME` must be listed in `.chezmoiignore` (currently: `README.md`, `LICENSE`, `.gitignore`, `install.sh`, `packages`, `konsave`).
+- Anything that should live in the repo but **not** be applied to `$HOME` must be listed in `.chezmoiignore` (currently: `README.md`, `LICENSE`, `.gitignore`, `install.sh`, `packages`, `konsave`, `themes`, `docs`).
 
 When adding a new dotfile, name the source path with the `dot_` prefix on every leading-dot component, and verify it isn't accidentally excluded by `.chezmoiignore`.
 
@@ -48,9 +49,47 @@ When adding a new dotfile, name the source path with the `dot_` prefix on every 
 2. If it depends on a package, make sure that package is in `packages/pacman.txt` or `packages/aur.txt`.
 3. The next `install.sh` run (or `chezmoi apply`) will deploy it.
 
+### Updating a theme bundle
+
+The two Plasma Global Themes live in `themes/rose-pine-dawn/` and
+`themes/rose-pine-main/`. Each is a complete KPackage tree with
+`metadata.json`, `contents/defaults`, color scheme, wallpaper, and preview.
+
+To iterate on a theme:
+
+1. Edit the relevant files under `themes/<bundle>/`.
+2. Re-install into the live session:
+
+```bash
+kpackagetool6 --type Plasma/LookAndFeel --upgrade themes/rose-pine-dawn   # or rose-pine-main
+plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn             # or rose-pine-main
+```
+
+3. To publish a release tarball later:
+
+```bash
+tar -czf rose-pine-dawn.tar.gz -C themes rose-pine-dawn
+```
+
+`install.sh` is idempotent: re-running it calls `kpackagetool6 --upgrade`
+on already-installed packages, so the next bootstrap picks up edits.
+
 ### Updating the Konsave snapshot
 
-`konsave/rose-pine-dawn.knsv` is a binary snapshot of the Plasma configuration. After making Plasma changes that should be part of the rice:
+`konsave/rose-pine-dawn.knsv` is a binary snapshot of the Plasma configuration.
+Since the day/night auto-switch landed, its scope is narrower: panel/widget
+layout, dolphin/kate/etc. application state, and the `kdeglobals [KDE]`
+auto-switch keys. It no longer bundles color schemes, wallpapers, or
+look-and-feel packages — those live in `themes/` as proper KPackage bundles.
+
+A konsave-config gotcha: konsave 2.3.0 can't handle slashed sub-entries
+(e.g. `plasma/look-and-feel`). The user-level `~/.config/konsave/conf.yaml`
+splits the prior `plasma` entry into a separate `plasma_assets` export
+group with `location: $SHARE_DIR/plasma` and `entries: [desktoptheme,
+plasmoids, containmentpreviews]` so non-theme plasma subdirs still ride
+along.
+
+After making Plasma changes that should be part of the rice:
 
 ```bash
 konsave -s rose-pine-dawn -f      # overwrite the named profile with current state
@@ -59,15 +98,28 @@ konsave -e rose-pine-dawn \
   -n rose-pine-dawn               # export to <repo>/konsave/rose-pine-dawn.knsv
 ```
 
-konsave appends a timestamp to the filename despite `-n`; rename back to `rose-pine-dawn.knsv` before committing. The file is ~9 MB — expect noisy diffs.
+konsave appends a timestamp to the filename despite `-n`; rename back to
+`rose-pine-dawn.knsv` before committing. The file is now smaller than the
+pre-themes/ era (~1 MB vs. ~9 MB) — expect diffs proportional to what
+actually changed.
 
-**Pitfall — color scheme must be a *named* scheme.** Plasma 6's first-session logic can reset `kdeglobals` if the active color scheme is identified only by `ColorSchemeHash` and not `ColorScheme=NAME`. To ensure the snapshot survives a fresh install:
+**Pitfall — color scheme must be a *named* scheme.** Plasma 6's first-session
+logic can reset `kdeglobals` if the active color scheme is identified only by
+`ColorSchemeHash` and not `ColorScheme=NAME`. To ensure the snapshot survives
+a fresh install:
 
-1. System Settings → Colors → "Save current colors as new scheme…" → give it a name (e.g. `RosePineDawnCustom`).
-2. Apply it (or run `plasma-apply-colorscheme RosePineDawnCustom`) so `kdeglobals [General]` gains a `ColorScheme=` line.
+1. System Settings → Colors → "Save current colors as new scheme…" → give it
+   a name (e.g. `RosePineDawnCustom` or `RosePineCustom`).
+2. Apply it (or run `plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn`)
+   so `kdeglobals [General]` gains a `ColorScheme=` line that names the scheme.
 3. Then re-export the konsave snapshot.
 
-`install.sh` runs `plasma-apply-colorscheme RosePineDawnCustom` after `konsave -a` to apply the named scheme to the live session.
+`install.sh` seeds the live session via
+`plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn` before
+writing the auto-switch keys via `kwriteconfig6`. The order matters:
+`plasma-apply-lookandfeel` strips `AutomaticLookAndFeel` from `kdeglobals
+[KDE]`, so the seeding step runs first and the auto-switch enable runs
+last.
 
 ### Testing changes to `install.sh`
 
