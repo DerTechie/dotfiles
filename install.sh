@@ -66,6 +66,9 @@ for theme in rose-pine-dawn rose-pine-main; do
   fi
 done
 
+echo "==> Seeding initial Global Theme"
+plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn || true
+
 echo "==> Enabling automatic day/night Global Theme switching"
 kwriteconfig6 --file kdeglobals --group KDE \
   --key AutomaticLookAndFeel true
@@ -73,9 +76,6 @@ kwriteconfig6 --file kdeglobals --group KDE \
   --key DefaultLightLookAndFeel org.dertechie.rose-pine-dawn
 kwriteconfig6 --file kdeglobals --group KDE \
   --key DefaultDarkLookAndFeel org.dertechie.rose-pine-main
-
-echo "==> Seeding initial Global Theme"
-plasma-apply-lookandfeel --apply org.dertechie.rose-pine-dawn || true
 
 echo "==> Rebuilding icon caches"
 kbuildsycoca6 --noincremental || true
