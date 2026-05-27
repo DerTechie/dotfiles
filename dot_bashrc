@@ -18,6 +18,7 @@ alias la='eza -a --icons --group-directories-first'
 alias lt='eza --tree --level=2 --icons'
 
 alias sail='sh $([ -f sail ] && echo sail || echo vendor/bin/sail)'
+alias docker=podman
 
 eval "$(zoxide init bash --cmd cd)"
 export PATH="/home/dertechie/.config/herd-lite/bin:$PATH"
@@ -25,3 +26,5 @@ export PHP_INI_SCAN_DIR="/home/dertechie/.config/herd-lite/bin:$PHP_INI_SCAN_DIR
 export PATH="$HOME/.local/bin:$PATH"
 
 export LIBVIRT_DEFAULT_URI='qemu:///system'
+
+export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
