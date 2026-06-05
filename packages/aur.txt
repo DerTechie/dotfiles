@@ -1,8 +1,14 @@
 1password
+1password-cli
 claude-desktop-appimage
+filebot
 jdownloader2
 jetbrains-toolbox
+lazysql
+llama.cpp-hip
 papirus-folders-git
 rose-pine-cursor
 rose-pine-gtk-theme-full
+signal-cli-bin
+xremap-kde-bin
 yay
