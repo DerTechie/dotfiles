@@ -28,3 +28,10 @@ export PATH="$HOME/.local/bin:$PATH"
 export LIBVIRT_DEFAULT_URI='qemu:///system'
 
 export DOCKER_HOST="unix:///run/user/$(id -u)/podman/podman.sock"
+
+eval "$(direnv hook bash)"
+
+export EDITOR=nvim
+
+# Machine-local overrides (secrets, host-specific) — not tracked in this repo
+[ -f ~/.bashrc.local ] && . ~/.bashrc.local
