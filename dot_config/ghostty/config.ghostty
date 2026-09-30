@@ -1,4 +1,4 @@
-theme = light:Rose Pine Dawn,dark:Rose Pine
+theme = light:GitHub Light High Contrast,dark:GitHub Dark
 
-font-family = JetBrainsMono Nerd Font
-font-size = 13
+font-family = Hack
+font-size = 10

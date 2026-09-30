@@ -1,5 +1,7 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+scan_timeout = 100
+
 format = """
 [](love)\
 $os\
@@ -20,73 +22,83 @@ $cmd_duration\
 $line_break\
 $character"""
 
-palette = 'rose_pine'
+palette = 'flexoki_dark'
 
-[palettes.rose_pine]
-base    = '#191724'
-surface = '#1f1d2e'
-overlay = '#26233a'
-muted   = '#6e6a86'
-subtle  = '#908caa'
-text    = '#e0def4'
-love    = '#eb6f92'
-gold    = '#f6c177'
-rose    = '#ebbcba'
-pine    = '#31748f'
-foam    = '#9ccfd8'
-iris    = '#c4a7e7'
-hl_med  = '#403d52'
+[palettes.flexoki_dark]
+surface = '#100F0F'
+muted   = '#878580'
+love    = '#D14D41'
+gold    = '#D0A215'
+foam    = '#3AA99F'
+iris    = '#8B7EC8'
+
+[palettes.flexoki_light]
+base    = '#100F0F'
+surface = '#FFFCF0'
+overlay = '#F2F0E5'
+muted   = '#878580'
+subtle  = '#6F6E69'
+text    = '#100F0F'
+
+love    = '#AF3029'
+gold    = '#AD8301'
+rose    = '#A02F6F'
+pine    = '#66800B'
+foam    = '#24837B'
+iris    = '#5E409D'
+hl_med  = '#CECDC3'
 
 [os]
 disabled = false
-style = "bg:love fg:base"
+style = "bg:love fg:surface"
+
 [os.symbols]
 Arch = " "
 
 [username]
 show_always = true
-style_user = "bg:love fg:base"
-style_root = "bg:love fg:base"
+style_user = "bg:love fg:surface"
+style_root = "bg:love fg:surface"
 format = '[ $user ]($style)'
 
 [directory]
-style = "bg:gold fg:base"
+style = "bg:gold fg:surface"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
 symbol = " "
-style = "bg:foam fg:base"
+style = "bg:foam fg:surface"
 format = '[ $symbol $branch ]($style)'
 
 [git_status]
-style = "bg:foam fg:base"
+style = "bg:foam fg:surface"
 format = '[$all_status$ahead_behind ]($style)'
 
 [nodejs]
 symbol = " "
-style = "bg:iris fg:base"
+style = "bg:iris fg:surface"
 format = '[ $symbol($version) ]($style)'
 
 [python]
 symbol = " "
-style = "bg:iris fg:base"
+style = "bg:iris fg:surface"
 format = '[ $symbol($version) ]($style)'
 
 [php]
 symbol = " "
-style = "bg:iris fg:base"
+style = "bg:iris fg:surface"
 format = '[ $symbol($version) ]($style)'
 
 [rust]
 symbol = "󱘗 "
-style = "bg:iris fg:base"
+style = "bg:iris fg:surface"
 format = '[ $symbol($version) ]($style)'
 
 [golang]
 symbol = " "
-style = "bg:iris fg:base"
+style = "bg:iris fg:surface"
 format = '[ $symbol($version) ]($style)'
 
 [cmd_duration]

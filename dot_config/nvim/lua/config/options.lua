@@ -3,3 +3,5 @@
 -- Add any additional options here
 
 vim.g.lazyvim_php_lsp = "intelephense"
+
+vim.o.background = "dark"
